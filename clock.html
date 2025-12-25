@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Digital Clock</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0d0d0d;
+            color: #00eaff;
+            text-align: center;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .light-mode {
+            background-color: #f8f8f8;
+            color: #111;
+        }
+        h1 { font-size: 80px; margin-bottom: 10px; }
+        h2 { font-size: 28px; margin: 5px; }
+        select, button, input {
+            padding: 8px;
+            margin: 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 16px;
+        }
+        input { width: 150px; }
+        footer {
+            margin-top: 40px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="clock">--:--:--</h1>
+    <h2 id="date">Loading date...</h2>
+
+    <div>
+        🌍 Timezone:
+        <select id="timezone">
+            <option value="UTC">UTC</option>
+            <option value="Asia/Kolkata">India</option>
+            <option value="America/New_York">New York</option>
+            <option value="Europe/London">London</option>
+            <option value="Asia/Tokyo">Tokyo</option>
+        </select>
+
+        ☀️ City:
+        <input type="text" id="city" placeholder="Enter city" value="London">
+        <button onclick="updateWeather()">Check Weather</button>
+    </div>
+
+    <h2 id="weather">Fetching weather...</h2>
+
+    <button onclick="toggleTheme()">🌗 Toggle Theme</button>
+
+    <footer>Made with ❤️ using Flask, JS, and wttr.in API</footer>
+
+    <script>
+        let darkMode = true;
+
+        function updateClock() {
+            const tz = document.getElementById('timezone').value;
+            fetch(`/get_time?tz=${tz}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('clock').textContent = data.time;
+                    document.getElementById('date').textContent = data.date;
+                });
+        }
+
+        function updateWeather() {
+            const city = document.getElementById('city').value;
+            fetch(`/get_weather?city=${city}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('weather').textContent = "❌ " + data.error;
+                    } else {
+                        document.getElementById('weather').textContent =
+                            `🌡️ ${data.temp}°C — ${data.desc} in ${data.city}`;
+                    }
+                });
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('light-mode', !darkMode);
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Save preferences (theme & timezone)
+        document.getElementById('timezone').addEventListener('change', () => {
+            localStorage.setItem('timezone', document.getElementById('timezone').value);
+        });
+
+        // Load preferences on page load
+        window.onload = function() {
+            const savedTZ = localStorage.getItem('timezone');
+            if (savedTZ) document.getElementById('timezone').value = savedTZ;
+
+            const savedTheme = localStorage.getItem('darkMode');
+            if (savedTheme === 'false') toggleTheme();
+
+            updateClock();
+            updateWeather();
+            setInterval(updateClock, 1000);
+        }
+    </script>
+</body>
+</html>
